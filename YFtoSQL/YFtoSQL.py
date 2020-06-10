@@ -35,7 +35,6 @@ def GetTicketInfo(ticket):
         #STEP 4.1.1: Si existe, buscamos la última fecha de carga de datos
         #auxDate = Result[1].type
         tkDataList.startDate = Result[1].strftime("%Y-%m-%d")
-        
         ##Debug
         #tkDataList.getFinancialData()
         #DBControl.InsertData(table, tkDataList.DataList)
@@ -46,54 +45,86 @@ def GetTicketInfo(ticket):
         tkDataList.getTicketInfo()
         DBControl.InsertDataONGeneralTable(tkDataList.DataInfo)
 
-    tkDataList.getFinancialData()
+    consulta = "SELECT Id FROM dbo.TicketInfo WHERE Simbolo = '"+tkDataList.Symbol+"'"
+    TicketCode = DBControl.Consulta(consulta)
+    tkDataList.getFinancialData(TicketCode[1])
+    TicketCode = 0
     DBControl.InsertData(table, tkDataList.DataList)
-    print("Ticket guardado", ticket)
+    print("Ticket guardado ", ticket)
     del tkDataList
     #STEP 5: Close DB
     DBControl.disconnect()
 
 
-def GetNewsInfo(indexSection):
+#def GetNewsInfo(indexSection):
+#    section = sectionList[indexSection]
+#    #STEP 5.1: Revisar si existen datos en la sección
+#    if section == "world":
+#        consulta = "SELECT Fecha, Seccion FROM FinancialDB.dbo.NewsInfo WHERE Seccion = 'World news' ORDER BY Fecha desc"
+#    else:
+#        consulta = "SELECT Fecha, Seccion FROM FinancialDB.dbo.NewsInfo WHERE Seccion = '" +section +"' ORDER BY Fecha desc"
+
+    
+#    Result = DBControl.Consulta(consulta)
+#    if Result[0] == 0:
+#        #STEP 5.1.1: Tenemos datos disponibles, por lo tanto buscamos la última fecha de la sección
+#        inicialDate = Result[1].strftime("%Y-%m-%d")
+#    else:
+#        inicialDate = "2010-01-01"
+#    try:
+#        ##Debug
+#        NewsData = TheGuardianData.TheGuardianNews()
+#        NewsData.getData(inicialDate, section)
+#        NewsData.transforData()
+#        ##print(NewsData.newsData[1])
+#        if len(NewsData.newsData) == 0:
+#            print("Section "+ section + " does not exist, please check")
+#        ##Debug
+#        #else:
+#        #    print(NewsData.newsData)
+#        ##print(NewsData.newsData[1][1])    
+#    except:
+#        print("Section "+ section + " does not exist, please check")
+    
+#    try:
+#        DBControl.InsertDataONNewsTable(NewsData.newsData)
+        
+#        print("Los datos de la sección " + section + " han sido cargados desde " + inicialDate + " hasta la fecha")
+#    except:
+        
+#        print("Error al cargar los datos en la seccion " + section)
+#    del NewsData
+#    #STEP 5: Close DB
+#    #DBControl.disconnect()
+
+def getNewsInfoByDate(indexSection):
+
     section = sectionList[indexSection]
-    #STEP 5.1: Revisar si existen datos en la sección
+    #STEP 5.1: Revisar si existen datos en la sección y obtener la última fecha de referencia
     if section == "world":
         consulta = "SELECT Fecha, Seccion FROM FinancialDB.dbo.NewsInfo WHERE Seccion = 'World news' ORDER BY Fecha desc"
     else:
         consulta = "SELECT Fecha, Seccion FROM FinancialDB.dbo.NewsInfo WHERE Seccion = '" +section +"' ORDER BY Fecha desc"
-
-    
     Result = DBControl.Consulta(consulta)
     if Result[0] == 0:
         #STEP 5.1.1: Tenemos datos disponibles, por lo tanto buscamos la última fecha de la sección
         inicialDate = Result[1].strftime("%Y-%m-%d")
     else:
         inicialDate = "2010-01-01"
-    try:
-        ##Debug
-        NewsData = TheGuardianData.TheGuardianNews()
-        NewsData.getData(inicialDate, section)
-        NewsData.transforData()
-        ##print(NewsData.newsData[1])
-        if len(NewsData.newsData) == 0:
-            print("Section "+ section + " does not exist, please check")
-        ##Debug
-        #else:
-        #    print(NewsData.newsData)
-        ##print(NewsData.newsData[1][1])    
-    except:
-        print("Section "+ section + " does not exist, please check")
     
+    #Recorrer las fechas para obtener los datos.
+    newsData = TheGuardianData.TheGuardianNews()
+
     try:
-        DBControl.InsertDataONNewsTable(NewsData.newsData)
-        
-        print("Los datos de la sección " + section + " han sido cargados desde " + inicialDate + " hasta la fecha")
+        newsData.transformDataByDate(inicialDate, section)
+        ##print(newsData.newsData)
+        try:
+            DBControl.InsertNewsByDateOnTable(newsData.newsData)
+            print("Los datos de la sección: " + section + "fueron cargados correctamente desde el " + inicialDate)
+        except:
+            print("Ocurrió un error al registrar los datos en la tabla")
     except:
-        
-        print("Error al cargar los datos en la seccion " + section)
-    del NewsData
-    #STEP 5: Close DB
-    #DBControl.disconnect()
+        print("Error al extraer los datos")
 
 #STEP 1: Get the list of tickets and create tkFinancialObjectList
 ticketList = FileHandling.elementList()
@@ -118,8 +149,9 @@ for ticket in ticketList.Elements:
 sectionList = ("business", "world", "sport","environment", "science", "technology")
 ##sectionList = ("world","business")
 for indexSection in range(0,len(sectionList)):
-    t = threading.Thread(target = GetNewsInfo, args=(indexSection,))
-    t.start()
+    #t = threading.Thread(target = GetNewsInfo, args=(indexSection,))
+    #t.start()
     #GetNewsInfo(indexSection)
-#STEP 5: Close DB
+    getNewsInfoByDate(indexSection)
+##STEP 5: Close DB
 DBControl.disconnect()

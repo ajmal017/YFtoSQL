@@ -25,7 +25,7 @@ class FinDataList:
         self.startDate = ""
         
 
-    def getFinancialData(self):
+    def getFinancialData(self, ticketId):
         #Get financial information of one ticket
         tkData = yf.Ticker(self.Symbol)
         endDate = time.strftime('%Y-%m-%d')
@@ -36,8 +36,10 @@ class FinDataList:
         dateNewTipe = np.array(dateAux).astype('M8[D]')
         dateString = np.datetime_as_string(dateNewTipe)
 
+        #Genetares TUPLA with financial data, transform from DataFrame to vector of TUPLAS
         for i in range(0, len(finData.values)):
             element = ['%.02f' %member for member in finData.values[i]]
+            element.insert(0, ticketId)
             element.insert(0, dateString[i])
             self.DataList.append(element)
 

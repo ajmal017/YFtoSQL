@@ -64,8 +64,8 @@ class DBHandle:
         for i in range(0, len(dataList)):
             cursor.execute("SELECT * FROM " + tableName +" WHERE Fecha = ? ", dataList[i][0])
             if cursor.rowcount != -1:
-                cursor.execute("INSERT INTO " + tableName +""" (Fecha, Apertura, MaxVal, Cierre, AdjClose, Volume)
-                        VALUES( ?, ?, ?, ?, ?, ?)""", dataList[i][0], dataList[i][1],dataList[i][2], dataList[i][4],dataList[i][4],dataList[i][5] )
+                cursor.execute("INSERT INTO " + tableName +""" (Fecha, TicketId, Apertura, MaxVal, Cierre, AdjClose, Volume)
+                        VALUES( ?, ?, ?, ?, ?, ?, ?)""", dataList[i][0], dataList[i][1],dataList[i][2], dataList[i][4],dataList[i][4],dataList[i][5],dataList[i][6] )
         
 
         cursor.commit()
@@ -101,6 +101,7 @@ class DBHandle:
                                 CREATE TABLE """ + tableName + """ (
                                     Id int IDENTITY(1,1) PRIMARY KEY,
                                     Fecha  smalldatetime,
+                                    TicketId int NOT NULL,
                                     Apertura  float,
                                     MaxVal  float,
                                     Cierre  float,
@@ -152,6 +153,16 @@ class DBHandle:
                                           VALUES( ?, ?, ?, ?)""", dataList[i][j][0], dataList[i][j][1],dataList[i][j][2], dataList[i][j][3] )
         
                     cursor.commit()
+
+    def InsertNewsByDateOnTable(self, dataList):
+        cursor = self.conn.cursor()
+        for i in range(0, len(dataList)):
+            cursor.execute("SELECT * FROM FinancialDB.dbo.NewsInfo WHERE Encabezado = ? ", dataList[i][2])
+            if cursor.rowcount != -1:
+                cursor.execute("""INSERT INTO FinancialDB.dbo.NewsInfo (Fecha, Seccion, Encabezado, Web)
+                                          VALUES( ?, ?, ?, ?)""", dataList[i][0], dataList[i][1],dataList[i][2], dataList[i][3] )
+        
+                cursor.commit()
 
 
     ##Desconectarse a BD
